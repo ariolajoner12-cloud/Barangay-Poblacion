@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="tl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Listahan ng Empleyado - Barangay Poblacion</title>
+
+  <style>
+    body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 20px; }
+    .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+    #qrimg { width: 200px; margin-top: 10px; }
+  </style>
+</head>
+
+<body>
+
+  <h2>Listahan ng Empleyado - Barangay Poblacion</h2>
+
+  <!-- QR Code Section -->
+  <h3>I-scan para makita ang page sa phone</h3>
+  <img id="qrimg" src="" alt="QR Code" />
+
+  <hr>
+
+  <!-- Listahan ng Empleyado -->
+  <div id="list"></div>
+
+  <script>
+    // --- Employee List (palitan mo ng totoong data) ---
+    const employees = [
+      { name: "Juan Dela Cruz", position: "Secretary" },
+      { name: "Maria Santos", position: "Treasurer" },
+      { name: "Pedro Reyes", position: "Tanod" }
+    ];
+
+    // --- Render employee cards ---
+    const list = document.getElementById("list");
+    employees.forEach(emp => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `<strong>${emp.name}</strong><br>${emp.position}`;
+      list.appendChild(div);
+    });
+
+    // --- Auto-generate QR code pointing to your GitHub Pages URL ---
+    const pageUrl = "https://ariolajoner12-cloud.github.io/Barangay-Poblacion/";
+    const qrApi = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(pageUrl);
+    document.getElementById("qrimg").src = qrApi;
+  </script>
+
+</body>
+</html>
