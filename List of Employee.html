@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Barangay Poblacion - Employee Directory (Responsive Table)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+body { font-family: Arial, sans-serif; margin:0; background: linear-gradient(to bottom right,#0d6efd,#6bb6ff); }
+header { background: rgba(0,0,0,0.4); color: white; padding: 20px; text-align:center; backdrop-filter: blur(4px);}
+.container { max-width:1150px; margin: 25px auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.15); }
+h2 { color:#0d6efd; }
+.table-wrapper { overflow-x: auto; }
+table { width:100%; border-collapse:collapse; margin-top:10px; min-width: 1000px; }
+th, td { border:1px solid #ccc; padding:4px 6px; text-align:left; font-size:13px; }
+th { background:#0d6efd; color:white; }
+tr:nth-child(even){ background:#f5faff }
+.input-group{ margin-bottom:8px }
+label{ display:block; font-weight:600; margin-bottom:4px }
+input[type=text], input[type=date], input[type=file], input[type=password]{ width:100%; padding:6px; border:1px solid #ccc; border-radius:6px; font-size:13px; }
+button{ background:#0d6efd; color:white; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; font-size:13px; }
+button:hover{ background:#0a58ca }
+.small { padding:4px 8px; font-size:12px }
+.editBtn{ background:orange }
+.deleteBtn{ background:red }
+#searchBar{ width:300px; padding:6px; border-radius:6px; border:1px solid #ccc; font-size:13px; }
+.controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+.pic-preview{ width:50px; height:50px; object-fit:cover; border-radius:6px; border:1px solid #ddd }
+.id-card { width:350px; height:220px; border:8px solid #0d6efd; border-radius:12px; padding:12px; box-sizing:border-box; background:white; display:flex; gap:10px; align-items:center }
+.id-photo{ width:95px; height:120px; background:#f0f0f0; border-radius:6px; object-fit:cover }
+.id-body{ flex:1 }
+.id-title{ font-weight:800; color:#0d6efd; font-size:18px }
+.id-field{ margin-top:6px }
+@media print { body *{ visibility:hidden } #printFrame, #printFrame *{ visibility:visible } #printFrame{ position:fixed; left:0; top:0 } }
+</style>
+</head>
+<body>
+<header>
+<h1>Barangay Poblacion - Employee Directory</h1>
+</header>
+<div class="container">
+<div id="loginBox">
+<h2>Admin Login</h2>
+<div class="input-group"><label>Username</label><input type="text" id="loginUser" value="admin"></div>
+<div class="input-group"><label>Password</label><input type="password" id="loginPass" value="1234"></div>
+<button onclick="login()">Login</button>
+<p id="loginMsg" style="color:red;font-weight:bold"></p>
+</div>
+<div id="mainArea" style="display:none">
+<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap">
+<h2>Employee List</h2>
+<div class="controls">
+<input id="searchBar" placeholder="Search by name, contact, address..." oninput="renderTable()">
+<select id="sortSelect" onchange="renderTable()">
+<option value="">-- Sort --</option>
+<option value="name_asc">Name A → Z</option>
+<option value="name_desc">Name Z → A</option>
+</select>
+<button class="small" onclick="exportExcel()">Export Excel</button>
+<button class="small" onclick="exportPDF()">Export PDF</button>
+<button class="small" onclick="exportCSV()">Export CSV</button>
+<button class="small" onclick="clearAll()">Clear All</button>
+</div>
+</div>
+<div class="table-wrapper">
+<table id="employeeTable">
+<thead>
+<tr>
+<th>Barangay ID No.</th>
+<th>Photo</th>
+<th>Name</th>
+<th>Birthday</th>
+<th>Blood Type</th>
+<th>Address</th>
+<th>Contact</th>
+<th>SSS</th>
+<th>PhilHealth</th>
+<th>Pag-IBIG</th>
+<th>Emergency Name</th>
+<th>Emergency Contact</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="employeeBody"></tbody>
+</table>
+</div>
+<div id="qrBox" style="margin-top:12px; text-align:center">
+<h3>Barangay Website QR</h3>
+<img id="qrimg" src="" style="width:160px;height:160px;border:6px solid white;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,0.15)">
+</div>
+<h2 style="margin-top:18px">Admin Panel</h2>
+<div id="adminPanel" style="background:#f8f9fa;padding:12px;border-radius:8px">
+<div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap">
+<div style="flex:1; min-width:280px">
+<div class="input-group"><label>Name</label><input id="name"></div>
+<div class="input-group"><label>Birthday</label><input type="date" id="birthday"></div>
+<div class="input-group"><label>Blood Type</label><input id="blood"></div>
+<div class="input-group"><label>Address</label><input id="address"></div>
+<div class="input-group"><label>Contact</label><input id="contact"></div>
+</div>
+<div style="flex:1; min-width:280px">
+<div class="input-group"><label>SSS</label><input id="sss"></div>
+<div class="input-group"><label>PhilHealth</label><input id="phil"></div>
+<div class="input-group"><label>Pag-IBIG</label><input id="pagibig"></div>
+<div class="input-group"><label>Emergency Name</label><input id="emergency"></div>
+<div class="input-group"><label>Emergency Contact</label><input id="emergencyContact"></div>
+</div>
+<div style="width:140px">
+<div class="input-group"><label>Profile Photo</label><input type="file" id="photoInput" accept="image/*"></div>
+<img id="photoPreview" class="pic-preview" src="" alt="preview">
+</div>
+</div>
+<div style="margin-top:10px; display:flex; gap:8px">
+<button onclick="saveEmployee()">Save Employee</button>
+<button onclick="clearForm()" style="background:#6c757d">Clear</button>
+</div>
+</div>
+</div>
+</div>
+<div id="printFrame" style="display:none"></div>
+<script>
+const STORAGE_KEY='employees_v1';
+let employees=[];
+let editIndex=-1;
+
+window.addEventListener('load', () => {
+  const pageUrl = "https://ariolajoner12-cloud.github.io/Barangay-Poblacion/";
+  const qrImg = document.getElementById('qrimg');
+  if(qrImg){
+    qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(pageUrl);
+  }
+});
+
+function login(){ const u=document.getElementById('loginUser').value; const p=document.getElementById('loginPass').value; if(u==='admin' && p==='1234'){ document.getElementById('loginBox').style.display='none'; document.getElementById('mainArea').style.display='block'; loadEmployees(); } else document.getElementById('loginMsg').textContent='Incorrect login details!'; }
+
+function resizeImage(file,maxWidth,maxHeight,callback){ const reader=new FileReader(); reader.onload=function(e){ const img=new Image(); img.onload=function(){ let w=img.width,h=img.height; if(w>maxWidth){h=h*(maxWidth/w);w=maxWidth;} if(h>maxHeight){w=w*(maxHeight/h);h=maxHeight;} const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);callback(canvas.toDataURL('image/jpeg',0.8)); }; img.src=e.target.result; }; reader.readAsDataURL(file); }
+
+document.getElementById('photoInput').addEventListener('change',e=>{ const f=e.target.files[0]; if(f){ resizeImage(f,300,300,resized=>{ document.getElementById('photoPreview').src=resized; }); } });
+
+function loadEmployees(){ try{ employees=JSON.parse(localStorage.getItem(STORAGE_KEY))||[]; }catch(e){ employees=[]; } renderTable(); }
+function renderTable(){ const tbody=document.getElementById('employeeBody'); tbody.innerHTML=''; const q=document.getElementById('searchBar').value.toLowerCase(); let list=employees.slice(); if(q) list=list.filter(e=>(e.name||'').toLowerCase().includes(q)||(e.contact||'').toLowerCase().includes(q)); const sort=document.getElementById('sortSelect').value; if(sort==='name_asc') list.sort((a,b)=> (a.name||'').localeCompare(b.name||'')); if(sort==='name_desc') list.sort((a,b)=> (b.name||'').localeCompare(a.name||'')); list.forEach((e,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${e.idNo}</td><td><img src='${e.photo||''}' class='pic-preview'></td><td>${e.name}</td><td>${e.birthday}</td><td>${e.blood}</td><td>${e.address}</td><td>${e.contact}</td><td>${e.sss}</td><td>${e.phil}</td><td>${e.pagibig}</td><td>${e.emergency}</td><td>${e.emergencyContact}</td><td></td>`; const tdAction=tr.querySelector('td:last-child'); const editBtn=document.createElement('button'); editBtn.textContent='Edit'; editBtn.className='editBtn small'; editBtn.onclick=()=>startEdit(i); const delBtn=document.createElement('button'); delBtn.textContent='Delete'; delBtn.className='deleteBtn small'; delBtn.onclick=()=>{ if(confirm('Delete?')){ employees.splice(i,1); saveToStorage(); renderTable(); } }; tdAction.append(editBtn,' ',delBtn); tbody.appendChild(tr); }); }
+function saveToStorage(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(employees)); }
+
+function saveEmployee(){
+  try{
+    const photo=document.getElementById('photoPreview').src||'';
+    const emp={ photo:photo, name:(document.getElementById('name').value||'').trim(), birthday:(document.getElementById('birthday').value||'').trim(), blood:(document.getElementById('blood').value||'').trim(), address:(document.getElementById('address').value||'').trim(), contact:(document.getElementById('contact').value||'').trim(), sss:(document.getElementById('sss').value||'').trim(), phil:(document.getElementById('phil').value||'').trim(), pagibig:(document.getElementById('pagibig').value||'').trim(), emergency:(document.getElementById('emergency').value||'').trim(), emergencyContact:(document.getElementById('emergencyContact').value||'').trim() };
+    if(!emp.name){ alert('Name required'); return; }
+    let newId;
+    if(editIndex >= 0){ newId = employees[editIndex].idNo.replace('BP-',''); }
+    else{ let maxId = employees.reduce((max, e) => Math.max(max, Number(e.idNo.replace('BP-',''))||0),0); newId = maxId + 1; }
+    emp.idNo = 'BP-' + String(newId).padStart(4,'0');
+    if(editIndex>=0){ employees[editIndex]=emp; editIndex=-1; } else employees.push(emp);
+    saveToStorage(); renderTable(); clearForm(); console.log('Employee saved:',emp);
+  }catch(err){ console.error('Error saving employee:',err); alert('Error while saving. Check console.'); }
+}
+
+function startEdit(i){ editIndex=i; const e=employees[i]; document.getElementById('photoPreview').src=e.photo||''; ['name','birthday','blood','address','contact','sss','phil','pagibig','emergency','emergencyContact'].forEach(id=>document.getElementById(id).value=e[id]||''); }
+function clearForm(){ editIndex=-1; document.getElementById('photoPreview').src=''; document.getElementById('photoInput').value=''; ['name','birthday','blood','address','contact','sss','phil','pagibig','emergency','emergencyContact'].forEach(id=>document.getElementById(id).value=''); }
+</script>
+</body>
+</html>
