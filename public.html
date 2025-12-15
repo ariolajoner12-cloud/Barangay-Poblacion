@@ -3,44 +3,131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Barangay Poblacion - Employee Directory</title>
+<title>Barangay Poblacion - Employee Directory (Public)</title>
 <style>
-body{font-family:Arial,sans-serif;margin:0;background:linear-gradient(to bottom right,#0d6efd,#6bb6ff)}
-header{background:rgba(0,0,0,.4);color:#fff;padding:16px;text-align:center}
-.container{max-width:1100px;margin:20px auto;background:#fff;padding:16px;border-radius:12px}
-input{padding:6px;width:300px;border-radius:6px;border:1px solid #ccc}
-.table-wrapper{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:900px}
-th,td{border:1px solid #ccc;padding:6px;font-size:13px}
-th{background:#0d6efd;color:#fff}
-tr:nth-child(even){background:#f5faff}
-.pic{width:50px;height:50px;object-fit:cover;border-radius:6px}
+body {
+    font-family: Arial, sans-serif;
+    margin:0;
+    background: linear-gradient(to bottom right,#0d6efd,#6bb6ff);
+}
+header {
+    background: rgba(0,0,0,0.4);
+    color: white;
+    padding: 20px;
+    text-align:center;
+    backdrop-filter: blur(4px);
+}
+.container {
+    max-width:1150px;
+    margin: 25px auto;
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.15);
+}
+h2 {
+    color:#0d6efd;
+}
+.table-wrapper {
+    overflow-x: auto;
+}
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+    min-width:1000px;
+}
+th, td {
+    border:1px solid #ccc;
+    padding:4px 6px;
+    text-align:left;
+    font-size:13px;
+}
+th {
+    background:#0d6efd;
+    color:white;
+}
+tr:nth-child(even){
+    background:#f5faff
+}
+.pic-preview{
+    width:50px;
+    height:50px;
+    object-fit:cover;
+    border-radius:6px;
+    border:1px solid #ddd
+}
 </style>
 </head>
 <body>
 <header>
-<h2>Barangay Poblacion</h2>
-<p>Employee Directory (Public View)</p>
+<h1>Barangay Poblacion - Employee Directory</h1>
 </header>
+
 <div class="container">
-<input id="search" placeholder="Search name or contact..." oninput="render()">
+<h2>Employee List</h2>
 <div class="table-wrapper">
-<table>
-<thead>
-<tr>
-<th>ID No.</th><th>Photo</th><th>Name</th><th>Birthday</th><th>Blood</th><th>Address</th><th>Contact</th>
-</tr>
-</thead>
-<tbody id="body"></tbody>
-</table>
+    <table id="employeeTable">
+        <thead>
+            <tr>
+                <th>Barangay ID No.</th>
+                <th>Photo</th>
+                <th>Name</th>
+                <th>Birthday</th>
+                <th>Blood Type</th>
+                <th>Address</th>
+                <th>Contact</th>
+                <th>SSS</th>
+                <th>PhilHealth</th>
+                <th>Pag-IBIG</th>
+                <th>Emergency Name</th>
+                <th>Emergency Contact</th>
+            </tr>
+        </thead>
+        <tbody id="employeeBody"></tbody>
+    </table>
 </div>
 </div>
+
 <script>
 const STORAGE_KEY='employees_v1';
 let employees=[];
-function load(){try{employees=JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch(e){employees=[]}render()}
-function render(){const q=document.getElementById('search').value.toLowerCase();const b=document.getElementById('body');b.innerHTML='';employees.filter(e=>(e.name||'').toLowerCase().includes(q)||(e.contact||'').toLowerCase().includes(q)).forEach(e=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${e.idNo}</td><td><img src='${e.photo||''}' class='pic'></td><td>${e.name}</td><td>${e.birthday}</td><td>${e.blood}</td><td>${e.address}</td><td>${e.contact}</td>`;b.appendChild(tr)})}
-load();
+
+// Load employees from localStorage
+function loadEmployees(){
+    try {
+        employees = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch(e){
+        employees = [];
+    }
+    renderTable();
+}
+
+// Render table
+function renderTable(){
+    const tbody = document.getElementById('employeeBody');
+    tbody.innerHTML = '';
+    employees.forEach(e => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${e.idNo}</td>
+            <td>${e.photo ? `<img src="${e.photo}" class="pic-preview">` : ''}</td>
+            <td>${e.name}</td>
+            <td>${e.birthday}</td>
+            <td>${e.blood}</td>
+            <td>${e.address}</td>
+            <td>${e.contact}</td>
+            <td>${e.sss}</td>
+            <td>${e.phil}</td>
+            <td>${e.pagibig}</td>
+            <td>${e.emergency}</td>
+            <td>${e.emergencyContact}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+window.addEventListener('load', loadEmployees);
 </script>
 </body>
 </html>
