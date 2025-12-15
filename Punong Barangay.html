@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Barangay Poblacion - Employee Directory (Public View)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+function exportLocalToJSON(){
+ try{
+   const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || employees;
+   if(!data.length){ alert('Walang data na ma-export'); return; }
+   const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+   const url = URL.createObjectURL(blob);
+   const a = document.createElement('a');
+   a.href = url;
+   a.download = 'employees.json';
+   a.click();
+   URL.revokeObjectURL(url);
+ }catch(e){
+   alert('Export failed');
+ }
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:linear-gradient(to bottom right,#0d6efd,#6bb6ff)}
+header{background:rgba(0,0,0,.4);color:#fff;padding:20px;text-align:center;backdrop-filter:blur(4px)}
+.container{max-width:1150px;margin:25px auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+h2{color:#0d6efd}
+.table-wrapper{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin-top:10px;min-width:1000px}
+th,td{border:1px solid #ccc;padding:4px 6px;text-align:left;font-size:13px}
+th{background:#0d6efd;color:#fff}
+tr:nth-child(even){background:#f5faff}
+#searchBar{width:300px;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:13px}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pic-preview{width:50px;height:50px;object-fit:cover;border-radius:6px;border:1px solid #ddd}
+</style>
+</head>
+<body>
+<header>
+<h1>Barangay Poblacion - Employee Directory</h1>
+<p>PUBLIC VIEW</p>
+</header>
+
+<div class="container">
+
+<h2>Employee List</h2>
+<div class="controls">
+<button onclick="exportLocalToJSON()">Export Data (JSON)</button>
+<input id="searchBar" placeholder="Search by name, contact, address..." oninput="renderTable()">
+<button onclick="exportExcel()">Export Excel</button>
+<button onclick="exportPDF()">Export PDF</button>
+<button onclick="exportCSV()">Export CSV</button>
+</div>
+
+<div class="table-wrapper">
+<table id="employeeTable">
+<thead>
+<tr>
+<th>Barangay ID No.</th>
+<th>Photo</th>
+<th>Name</th>
+<th>Birthday</th>
+<th>Blood Type</th>
+<th>Address</th>
+<th>Contact</th>
+<th>SSS</th>
+<th>PhilHealth</th>
+<th>Pag-IBIG</th>
+<th>Emergency Name</th>
+<th>Emergency Contact</th>
+</tr>
+</thead>
+<tbody id="employeeBody"></tbody>
+</table>
+</div>
+
+<div id="qrBox" style="margin-top:12px;text-align:center">
+<h3>Barangay Website QR</h3>
+<img id="qrimg" style="width:160px;height:160px;border:6px solid white;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.15)">
+</div>
+</div>
+
+<script>
+const STORAGE_KEY='employees_v1';
+let employees=[];
+
+window.addEventListener('load',()=>{
+ const pageUrl="https://ariolajoner12-cloud.github.io/Barangay-Poblacion/?public";
+ document.getElementById('qrimg').src=
+  "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data="+encodeURIComponent(pageUrl);
+ loadEmployees();
+});
+
+function loadEmployees(){
+ // 1️⃣ Try localStorage first (old saved data)
+ try{
+   const local = JSON.parse(localStorage.getItem(STORAGE_KEY));
+   if(local && local.length){
+     employees = local;
+     renderTable();
+     return;
+   }
+ }catch(e){}
+
+ // 2️⃣ Fallback to employees.json (public view)
+ fetch('employees.json')
+  .then(res=>res.json())
+  .then(data=>{
+    employees = data;
+    renderTable();
+  })
+  .catch(()=>{
+    employees=[];
+    renderTable();
+  });
+}
+
+function renderTable(){
+ const tbody=document.getElementById('employeeBody');
+ tbody.innerHTML='';
+ const q=document.getElementById('searchBar').value.toLowerCase();
+ let list=employees.slice();
+ if(q) list=list.filter(e=>(e.name||'').toLowerCase().includes(q)||(e.contact||'').toLowerCase().includes(q)||(e.address||'').toLowerCase().includes(q));
+ list.forEach(e=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+   <td>${e.idNo||''}</td>
+   <td><img src='${e.photo||''}' class='pic-preview'></td>
+   <td>${e.name||''}</td>
+   <td>${e.birthday||''}</td>
+   <td>${e.blood||''}</td>
+   <td>${e.address||''}</td>
+   <td>${e.contact||''}</td>
+   <td>${e.sss||''}</td>
+   <td>${e.phil||''}</td>
+   <td>${e.pagibig||''}</td>
+   <td>${e.emergency||''}</td>
+   <td>${e.emergencyContact||''}</td>`;
+  tbody.appendChild(tr);
+ });
+}
+</script>
+</body>
+</html>
